@@ -1374,7 +1374,6 @@ class BookingRepository extends BaseRepository
 
     public function setMailer($job, $job_id, $userId, $jobDue)
     {
-      if ($job->status == 'pending' && Job::insertTranslatorJobRel($userId, $job_id)) {
           $job->status = 'assigned';
           $job->save();
           $user = $job->user()->get()->first();
@@ -1393,7 +1392,8 @@ class BookingRepository extends BaseRepository
               'job'  => $job
           ];
           $mailer->send($email, $name, $subject, 'emails.job-accepted', $data);
-    }
+
+  }
     /**
      * @param $data
      * @param $user
@@ -1409,11 +1409,10 @@ class BookingRepository extends BaseRepository
 
 
         if (!Job::isTranslatorAlreadyBooked($job_id, $cuser->id, $job->due)) {
-            setMailer($job, $job_id, $cuser->id, $job->due);
-        }
-            /*@todo
-                add flash message here.
-            */
+            if ($job->status == 'pending' && Job::insertTranslatorJobRel($cuser->id, $job_id)) {
+                setMailer($job, $job_id, $cuser->id, $job->due);
+            }
+
             $jobs = $this->getPotentialJobs($cuser);
             $response = array();
             $response['list'] = json_encode(['jobs' => $jobs, 'job' => $job], true);
@@ -1436,7 +1435,8 @@ class BookingRepository extends BaseRepository
         $response = array();
 
         if (!Job::isTranslatorAlreadyBooked($job_id, $cuser->id, $job->due)) {
-            setMailer($job, $job_id, $cuser->id, $job->due);
+            if ($job->status == 'pending' && Job::insertTranslatorJobRel($cuser->id, $job_id)) {
+                  setMailer($job, $job_id, $cuser->id, $job->due);
 
                 $data = array();
                 $data['notification_type'] = 'job_accepted';
