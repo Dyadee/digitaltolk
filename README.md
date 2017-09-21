@@ -8,3 +8,5 @@ This README file contains my general suggestions about code improvements and com
 
 3. Some function contains too many if/elseif statement making it harder to trace logic. There are even several ifs that can be combined.
 
+4. Some variables is declared and initialised in the middle of a code block. They must be written at the beginning of a code block.
+
