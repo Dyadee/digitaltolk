@@ -69,8 +69,8 @@ class BookingController extends Controller
     {
         $data = $request->all();
         if($id!=null){
-          $cuser = $request->__authenticatedUser;
-          $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
+            $cuser = $request->__authenticatedUser;
+            $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
         }else{
             $response = $this->repository->store($request->__authenticatedUser, $data);
         }

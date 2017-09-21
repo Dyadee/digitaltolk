@@ -1372,6 +1372,28 @@ class BookingRepository extends BaseRepository
         return $user_tags;
     }
 
+    public function setMailer($job, $job_id, $userId, $jobDue)
+    {
+      if ($job->status == 'pending' && Job::insertTranslatorJobRel($userId, $job_id)) {
+          $job->status = 'assigned';
+          $job->save();
+          $user = $job->user()->get()->first();
+          $mailer = new AppMailer();
+
+          if (!empty($job->user_email)) {
+              $email = $job->user_email;
+              $name = $user->name;
+          } else {
+              $email = $user->email;
+              $name = $user->name;
+          }
+          $subject = 'Bekräftelse - tolk har accepterat er bokning (bokning # ' . $job->id . ')';
+          $data = [
+              'user' => $user,
+              'job'  => $job
+          ];
+          $mailer->send($email, $name, $subject, 'emails.job-accepted', $data);
+    }
     /**
      * @param $data
      * @param $user
@@ -1381,33 +1403,14 @@ class BookingRepository extends BaseRepository
 
         $adminemail = config('app.admin_email');
         $adminSenderEmail = config('app.admin_sender_email');
-
-        $cuser = $user;
         $job_id = $data['job_id'];
         $job = Job::findOrFail($job_id);
+        $cuser = $user;
+
+
         if (!Job::isTranslatorAlreadyBooked($job_id, $cuser->id, $job->due)) {
-            if ($job->status == 'pending' && Job::insertTranslatorJobRel($cuser->id, $job_id)) {
-                $job->status = 'assigned';
-                $job->save();
-                $user = $job->user()->get()->first();
-                $mailer = new AppMailer();
-
-                if (!empty($job->user_email)) {
-                    $email = $job->user_email;
-                    $name = $user->name;
-                    $subject = 'Bekräftelse - tolk har accepterat er bokning (bokning # ' . $job->id . ')';
-                } else {
-                    $email = $user->email;
-                    $name = $user->name;
-                    $subject = 'Bekräftelse - tolk har accepterat er bokning (bokning # ' . $job->id . ')';
-                }
-                $data = [
-                    'user' => $user,
-                    'job'  => $job
-                ];
-                $mailer->send($email, $name, $subject, 'emails.job-accepted', $data);
-
-            }
+            setMailer($job, $job_id, $cuser->id, $job->due);
+        }
             /*@todo
                 add flash message here.
             */
@@ -1433,25 +1436,7 @@ class BookingRepository extends BaseRepository
         $response = array();
 
         if (!Job::isTranslatorAlreadyBooked($job_id, $cuser->id, $job->due)) {
-            if ($job->status == 'pending' && Job::insertTranslatorJobRel($cuser->id, $job_id)) {
-                $job->status = 'assigned';
-                $job->save();
-                $user = $job->user()->get()->first();
-                $mailer = new AppMailer();
-
-                if (!empty($job->user_email)) {
-                    $email = $job->user_email;
-                    $name = $user->name;
-                } else {
-                    $email = $user->email;
-                    $name = $user->name;
-                }
-                $subject = 'Bekräftelse - tolk har accepterat er bokning (bokning # ' . $job->id . ')';
-                $data = [
-                    'user' => $user,
-                    'job'  => $job
-                ];
-                $mailer->send($email, $name, $subject, 'emails.job-accepted', $data);
+            setMailer($job, $job_id, $cuser->id, $job->due);
 
                 $data = array();
                 $data['notification_type'] = 'job_accepted';
